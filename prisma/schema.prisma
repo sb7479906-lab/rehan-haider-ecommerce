@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -33,33 +34,33 @@ enum PaymentStatus {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String
-  email         String    @unique
-  phone         String?
-  password      String
-  role          Role      @default(CUSTOMER)
-  addresses     Address[]
-  orders        Order[]
-  reviews       Review[]
-  wishlist      WishlistItem[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  phone     String?
+  password  String
+  role      Role      @default(CUSTOMER)
+  addresses Address[]
+  orders    Order[]
+  reviews   Review[]
+  wishlist  WishlistItem[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model Address {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fullName    String
-  phone       String
-  address     String
-  city        String
-  state       String
-  postalCode  String
-  country     String   @default("Pakistan")
-  isDefault   Boolean  @default(false)
-  orders      Order[]
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName   String
+  phone      String
+  address    String
+  city       String
+  state      String
+  postalCode String
+  country    String   @default("Pakistan")
+  isDefault  Boolean  @default(false)
+  orders     Order[]
 }
 
 model Category {
@@ -75,68 +76,68 @@ model Category {
 }
 
 model Product {
-  id               String    @id @default(cuid())
+  id               String         @id @default(cuid())
   name             String
-  slug             String    @unique
-  sku              String    @unique
+  slug             String         @unique
+  sku              String         @unique
   description      String
   shortDescription String?
-  price            Int       // Stored in PKR
+  price            Int            // Stored in PKR
   compareAtPrice   Int?
-  discount         Int       @default(0) // Percentage
-  stock            Int       @default(0)
-  lowStockAlert    Int       @default(5)
+  discount         Int            @default(0) // Percentage
+  stock            Int            @default(0)
+  lowStockAlert    Int            @default(5)
   categoryId       String
-  category         Category  @relation(fields: [categoryId], references: [id])
+  category         Category       @relation(fields: [categoryId], references: [id])
   images           ProductImage[]
   reviews          Review[]
   wishlistItems    WishlistItem[]
   orderItems       OrderItem[]
-  status           Boolean   @default(true)
-  featured         Boolean   @default(false)
-  bestSeller       Boolean   @default(false)
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  status           Boolean        @default(true)
+  featured         Boolean        @default(false)
+  bestSeller       Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 
 model ProductImage {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   url       String
   alt       String?
-  isPrimary Boolean  @default(false)
-  sortOrder Int      @default(0)
+  isPrimary Boolean @default(false)
+  sortOrder Int     @default(0)
 }
 
 model Order {
-  id              String         @id @default(cuid())
-  userId          String
-  user            User           @relation(fields: [userId], references: [id])
-  addressId       String
-  address         Address        @relation(fields: [addressId], references: [id])
-  items           OrderItem[]
-  subtotal        Int
-  discountAmount  Int            @default(0)
-  deliveryFee     Int
-  grandTotal      Int
-  paymentMethod   String         @default("COD") // Cash on Delivery Only
-  paymentStatus   PaymentStatus  @default(PENDING)
-  orderStatus     OrderStatus    @default(PENDING)
-  trackingNumber  String?
-  notes           String?
-  couponCode      String?
-  statusHistory   OrderStatusHistory[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id             String               @id @default(cuid())
+  userId         String
+  user           User                 @relation(fields: [userId], references: [id])
+  addressId      String
+  address        Address              @relation(fields: [addressId], references: [id])
+  items          OrderItem[]
+  subtotal       Int
+  discountAmount Int                  @default(0)
+  deliveryFee    Int
+  grandTotal     Int
+  paymentMethod  String               @default("COD") // Cash on Delivery Only
+  paymentStatus  PaymentStatus        @default(PENDING)
+  orderStatus    OrderStatus          @default(PENDING)
+  trackingNumber String?
+  notes          String?
+  couponCode     String?
+  statusHistory  OrderStatusHistory[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model OrderItem {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   orderId   String
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
   quantity  Int
   price     Int
 }
@@ -174,28 +175,28 @@ model WishlistItem {
 }
 
 model Coupon {
-  id               String   @id @default(cuid())
-  code             String   @unique
-  discountType     String
-  discountValue    Int
-  minOrderAmount   Int?
-  maxDiscount      Int?
-  usageLimit       Int?
-  usedCount        Int      @default(0)
-  startDate        DateTime
-  expiryDate       DateTime
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
+  id             String   @id @default(cuid())
+  code           String   @unique
+  discountType   String
+  discountValue  Int
+  minOrderAmount Int?
+  maxDiscount    Int?
+  usageLimit     Int?
+  usedCount      Int      @default(0)
+  startDate      DateTime
+  expiryDate     DateTime
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
 }
 
 model SiteSetting {
-  id                 String   @id @default(cuid())
-  storeName          String   @default("Rehan Haider")
-  codEnabled         Boolean  @default(true)
-  codFee             Int      @default(0)
-  minCodOrder        Int      @default(500)
-  maxCodOrder        Int      @default(100000)
-  freeDeliveryAbove  Int      @default(5000)
-  deliveryFee        Int      @default(200)
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default(cuid())
+  storeName         String   @default("Rehan Haider")
+  codEnabled        Boolean  @default(true)
+  codFee            Int      @default(0)
+  minCodOrder       Int      @default(500)
+  maxCodOrder       Int      @default(100000)
+  freeDeliveryAbove Int      @default(5000)
+  deliveryFee       Int      @default(200)
+  updatedAt         DateTime @updatedAt
 }

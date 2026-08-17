@@ -1,87 +1,234 @@
-import { PrismaClient, Role } from '@prisma/client';
-import * as bcrypt from 'bcryptjs';
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+import bcryptjs from "bcryptjs";
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('Database seeding shuru ho rahi hai...');
+  console.log("🌱 Seeding database...");
 
-  // 1. Admin Account Banayein
-  const adminEmail = process.env.ADMIN_EMAIL || 'admin@example.com';
-  const rawPassword = process.env.ADMIN_PASSWORD || 'CHANGE_THIS_DEVELOPMENT_PASSWORD';
-  const hashedPassword = await bcrypt.hash(rawPassword, 10);
+  // Clear existing data
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.review.deleteMany();
+  await prisma.wishlistItem.deleteMany();
+  await prisma.productImage.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.address.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.category.deleteMany();
 
-  const admin = await prisma.user.upsert({
-    where: { email: adminEmail },
-    update: {},
-    create: {
-      name: 'Rehan Haider Admin',
-      email: adminEmail,
-      phone: '+923000000000',
-      password: hashedPassword,
-      role: Role.SUPER_ADMIN,
+  // Hash passwords
+  const adminPassword = await bcryptjs.hash("admin@123", 10);
+  const customerPassword = await bcryptjs.hash("customer@123", 10);
+
+  // Create users
+  const admin = await prisma.user.create({
+    data: {
+      name: "Admin User",
+      email: "admin@ecommerce.com",
+      phone: "+92-300-1234567",
+      password: adminPassword,
+      role: "SUPER_ADMIN",
     },
   });
 
-  console.log(`Admin account ready hai: ${admin.email}`);
+  const customer1 = await prisma.user.create({
+    data: {
+      name: "John Doe",
+      email: "john@example.com",
+      phone: "+92-300-2234567",
+      password: customerPassword,
+      role: "CUSTOMER",
+    },
+  });
 
-  // 2. COD aur Store Settings Initialization
-  const existingSettings = await prisma.siteSetting.findFirst();
-  if (!existingSettings) {
-    await prisma.siteSetting.create({
-      data: {
-        storeName: 'Rehan Haider',
-        codEnabled: true,
-        codFee: 0,
-        minCodOrder: 500,
-        maxCodOrder: 100000,
-        freeDeliveryAbove: 5000,
-        deliveryFee: 200,
-      },
-    });
-    console.log('Store settings aur Cash on Delivery (COD) config initialize ho gayi hai.');
-  }
+  const customer2 = await prisma.user.create({
+    data: {
+      name: "Jane Smith",
+      email: "jane@example.com",
+      phone: "+92-300-3234567",
+      password: customerPassword,
+      role: "CUSTOMER",
+    },
+  });
 
-  // 3. Default Categories
-  const categories = [
-    { name: 'Men Fashion', slug: 'men-fashion', description: 'Apparel and accessories for men' },
-    { name: 'Women Fashion', slug: 'women-fashion', description: 'Apparel and accessories for women' },
-    { name: 'Electronics', slug: 'electronics', description: 'Gadgets, accessories and electronics' },
-    { name: 'Accessories', slug: 'accessories', description: 'Lifestyle accessories and leather goods' },
-  ];
+  console.log("✅ Users created");
 
-  for (const cat of categories) {
-    await prisma.category.upsert({
-      where: { slug: cat.slug },
-      update: {},
-      create: cat,
-    });
-  }
-  console.log('Categories add ho gayi hain.');
-
-  // 4. Welcome Coupon Code
-  await prisma.coupon.upsert({
-    where: { code: 'WELCOME10' },
-    update: {},
-    create: {
-      code: 'WELCOME10',
-      discountType: 'PERCENTAGE',
-      discountValue: 10,
-      minOrderAmount: 1000,
-      maxDiscount: 500,
-      usageLimit: 100,
-      startDate: new Date(),
-      expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+  // Create categories
+  const electronics = await prisma.category.create({
+    data: {
+      name: "Electronics",
+      slug: "electronics",
+      description: "Electronic devices and gadgets",
       isActive: true,
     },
   });
 
-  console.log('Welcome Coupon WELCOME10 add ho gaya hai.');
+  const clothing = await prisma.category.create({
+    data: {
+      name: "Clothing",
+      slug: "clothing",
+      description: "Apparel and fashion items",
+      isActive: true,
+    },
+  });
+
+  const homeDecor = await prisma.category.create({
+    data: {
+      name: "Home Decor",
+      slug: "home-decor",
+      description: "Home decoration and furnishings",
+      isActive: true,
+    },
+  });
+
+  console.log("✅ Categories created");
+
+  // Create products
+  const laptop = await prisma.product.create({
+    data: {
+      name: "MacBook Pro 14-inch",
+      slug: "macbook-pro-14",
+      sku: "MBP-14-001",
+      description:
+        "Powerful laptop with M3 Pro chip, perfect for professionals",
+      shortDescription: "High-performance laptop",
+      price: 299999, // PKR
+      compareAtPrice: 349999,
+      discount: 14,
+      stock: 50,
+      lowStockAlert: 5,
+      categoryId: electronics.id,
+      status: true,
+      featured: true,
+      bestSeller: true,
+    },
+  });
+
+  const tshirt = await prisma.product.create({
+    data: {
+      name: "Cotton T-Shirt",
+      slug: "cotton-tshirt",
+      sku: "TSH-001",
+      description: "Comfortable 100% cotton t-shirt in multiple colors",
+      shortDescription: "Classic cotton tee",
+      price: 1500, // PKR
+      compareAtPrice: 1999,
+      discount: 25,
+      stock: 200,
+      lowStockAlert: 10,
+      categoryId: clothing.id,
+      status: true,
+      featured: false,
+      bestSeller: true,
+    },
+  });
+
+  const cushion = await prisma.product.create({
+    data: {
+      name: "Decorative Cushion",
+      slug: "decorative-cushion",
+      sku: "CUSH-001",
+      description: "Soft and stylish decorative cushion for your home",
+      shortDescription: "Home décor cushion",
+      price: 2500, // PKR
+      compareAtPrice: 3500,
+      discount: 28,
+      stock: 100,
+      lowStockAlert: 5,
+      categoryId: homeDecor.id,
+      status: true,
+      featured: true,
+      bestSeller: false,
+    },
+  });
+
+  console.log("✅ Products created");
+
+  // Create address
+  await prisma.address.create({
+    data: {
+      userId: customer1.id,
+      fullName: "John Doe",
+      phone: "+92-300-2234567",
+      address: "123 Main Street",
+      city: "Karachi",
+      state: "Sindh",
+      postalCode: "75200",
+      country: "Pakistan",
+      isDefault: true,
+    },
+  });
+
+  console.log("✅ Addresses created");
+
+  // Create an order
+  const order = await prisma.order.create({
+    data: {
+      userId: customer1.id,
+      addressId: (
+        await prisma.address.findFirst({
+          where: { userId: customer1.id },
+        })
+      )!.id,
+      orderNumber: "ORD-001",
+      status: "CONFIRMED",
+      paymentStatus: "PENDING",
+      subtotal: laptop.price,
+      tax: Math.floor(laptop.price * 0.17),
+      shippingCost: 500,
+      total: laptop.price + Math.floor(laptop.price * 0.17) + 500,
+      items: {
+        create: [
+          {
+            productId: laptop.id,
+            quantity: 1,
+            price: laptop.price,
+          },
+        ],
+      },
+    },
+  });
+
+  console.log("✅ Orders created");
+
+  // Create reviews
+  await prisma.review.create({
+    data: {
+      productId: tshirt.id,
+      userId: customer2.id,
+      rating: 5,
+      title: "Great quality!",
+      comment: "Very comfortable and durable t-shirt",
+      helpful: 5,
+    },
+  });
+
+  console.log("✅ Reviews created");
+
+  // Create wishlist items
+  await prisma.wishlistItem.create({
+    data: {
+      userId: customer2.id,
+      productId: laptop.id,
+    },
+  });
+
+  console.log("✅ Wishlist items created");
+
+  console.log("✨ Database seeding completed successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error('Seeding me error aaya:', e);
+    console.error("❌ Error seeding database:", e);
     process.exit(1);
   })
   .finally(async () => {
